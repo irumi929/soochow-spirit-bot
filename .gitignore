@@ -1,0 +1,10 @@
+# 忽略主要的憑證檔
+.env
+.env.local
+secrets.json
+
+# 忽略 ngrok.exe
+ngrok.exe
+
+# 忽略 Python 暫存檔
+__pycache__/
