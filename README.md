@@ -82,3 +82,7 @@ created_at	DATETIME	發言時間
 | 2. tonlingbot-ai-chat    | AI 聊天機器人（對話聊天、問答、NLP 回饋）            | AI 模型獨立部署，避免影響主系統性能        |
 | 3. tonlingbot-prediction | 智慧預測模組（活動參與、餐廳用餐人數預測等）              | 預測功能較複雜，獨立管理模型和資料          |
 | 4. tonlingbot-community  | 學生社群互動（聊天室、討論區、社團互動）                | 互動與社群有特殊需求（UI、即時性等），獨立部署較佳 |
+
+
+
+Irumi165/tonlingbot-community 其中一個有成功的space
