@@ -85,4 +85,5 @@ created_at	DATETIME	發言時間
 
 
 
-Irumi165/tonlingbot-community 其中一個有成功的space
+Irumi165/tonlingbot-community 其中一個有成功的space 刪了
+課程查詢教室甚麼的資料在學校網站裡面 因為要登入所以很難爬 可以改成剩dcard爬資料(我在試)
