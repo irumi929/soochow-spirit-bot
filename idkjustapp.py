@@ -59,10 +59,11 @@ def handle_message(event):
         reply_text = "that's me🤌🏻"
     elif "校園地圖" in user_msg:
         # 回傳東吳大學地圖圖片
-        image_url = "https://i.imgur.com/your-image-id.jpg"  # 替換為實際圖片 URL imgur的公開圖床
+        image_url = "https://drive.google.com/uc?export=download&id=1uYUx4G_3UGhBd4Oj6GBYZzcxCcxPe_Kx" # google drive 的url
+        #https://www.dropbox.com/scl/fi/ridqgh04r6j545eo73xbe/.jpg?rlkey=6qlnd92eoxcs0cz65237p94wh&st=lpitrnq1&raw=1 這個為dropbox 的url(備用)
         reply_messages = [
             ImageMessage(original_content_url=image_url, preview_image_url=image_url),
-            TextMessage(text="這是東吳大學外雙溪校區的地圖！請參考～")
+            TextMessage(text="這是東吳大學外雙溪校區的地圖！")
         ]
     else:
         reply_text = f"你說了: {user_msg}，但我聽不懂😅"
