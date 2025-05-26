@@ -57,6 +57,13 @@ def handle_message(event):
         reply_text = "eww"
     elif "poordog" in user_msg:
         reply_text = "that's me🤌🏻"
+    elif "校園地圖" in user_msg:
+        # 回傳東吳大學地圖圖片
+        image_url = "https://i.imgur.com/your-image-id.jpg"  # 替換為實際圖片 URL imgur的公開圖床
+        reply_messages = [
+            ImageMessage(original_content_url=image_url, preview_image_url=image_url),
+            TextMessage(text="這是東吳大學外雙溪校區的地圖！請參考～")
+        ]
     else:
         reply_text = f"你說了: {user_msg}，但我聽不懂😅"
 
