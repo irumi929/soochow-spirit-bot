@@ -1,0 +1,27 @@
+# Python 相關
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/  # 您的虛擬環境資料夾
+
+# 應用程式產生的檔案
+data/lost_and_found.db  # 忽略 SQLite 資料庫檔案
+*.db
+static/uploads/         # 忽略所有用戶上傳的圖片或動態生成的檔案
+# 更多特定圖片格式的忽略，如果 static/uploads/ 下還有其他子資料夾，也要忽略
+# static/uploads/*.jpg
+# static/uploads/*.png
+# static/uploads/*.jpeg
+# static/uploads/*.gif
+
+# Log 檔案
+*.log
+*.txt  # 如果您的日誌檔案是 .txt
+
+# IDE 和編輯器相關
+.vscode/  # VS Code 設定檔
+.DS_Store # macOS 檔案
