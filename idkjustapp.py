@@ -61,6 +61,7 @@ def handle_message(event):
         # 回傳東吳大學地圖圖片
         image_url = "https://drive.google.com/uc?export=download&id=1uYUx4G_3UGhBd4Oj6GBYZzcxCcxPe_Kx" # google drive 的url
         #https://www.dropbox.com/scl/fi/ridqgh04r6j545eo73xbe/.jpg?rlkey=6qlnd92eoxcs0cz65237p94wh&st=lpitrnq1&raw=1 這個為dropbox 的url(備用)
+        #無法開啟圖片，之後要放上去要透過huggingface上傳圖片然後取得公開url再放入image_url=這裡面
         reply_messages = [
             ImageMessage(original_content_url=image_url, preview_image_url=image_url),
             TextMessage(text="這是東吳大學外雙溪校區的地圖！")
