@@ -8,20 +8,16 @@ env/
 venv/
 .venv/  # 您的虛擬環境資料夾
 
-# 應用程式產生的檔案
+# 應用程式產生的動態檔案 (非常重要！)
 data/lost_and_found.db  # 忽略 SQLite 資料庫檔案
-*.db
-static/uploads/         # 忽略所有用戶上傳的圖片或動態生成的檔案
-# 更多特定圖片格式的忽略，如果 static/uploads/ 下還有其他子資料夾，也要忽略
-# static/uploads/*.jpg
-# static/uploads/*.png
-# static/uploads/*.jpeg
-# static/uploads/*.gif
+*.db                    # 忽略所有 .db 檔案
+static/uploads/         # 忽略 static/uploads/ 資料夾及其所有內容 (用於用戶上傳的圖片)
 
 # Log 檔案
 *.log
-*.txt  # 如果您的日誌檔案是 .txt
+*.txt                   # 如果您的日誌檔案是 .txt
 
-# IDE 和編輯器相關
-.vscode/  # VS Code 設定檔
-.DS_Store # macOS 檔案
+# IDE 和作業系統相關
+.vscode/                # VS Code 設定檔
+.DS_Store               # macOS 檔案
+Thumbs.db               # Windows 縮圖快取

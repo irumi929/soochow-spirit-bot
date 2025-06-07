@@ -168,25 +168,17 @@ def handle_image_message(event):
 
             with open(local_file_path, 'wb') as f:
                 f.write(image_data)
-            
-            # --- 關鍵修改從這裡開始 ---
+
             # 確保生成的 URL 是 HTTPS
-            # request.url_root 通常應該反映 ngrok 的協議，但如果不是，我們強制它
-            # 我們知道 ngrok 會提供 HTTPS URL
-            
-            # 獲取 ngrok 的公共 URL 部分 (不包含路徑)
-            # 檢查 request.url_root 是否為 https，否則強制為 https
             base_url = request.url_root.rstrip('/')
             if not base_url.startswith('https://'):
-                # 如果它不是 https，則嘗試將其從 http:// 轉換為 https://
-                # 或者更穩妥地，直接用 request.host 並加上 https
-                base_url = f"https://{request.host}" # 這樣可以確保是 HTTPS
+                base_url = f"https://{request.host}" 
             
             image_url = f"{base_url}/static/uploads/{unique_filename}"
             print(f"Generated image URL (corrected): {image_url}") # 打印修正後的 URL
-            # --- 關鍵修改到這裡結束 ---
+         
             
-            db_manager.save_item_image_url(current_item_id, image_url) # 將修正後的 URL 儲存到資料庫
+            db_manager.save_item_image_url(current_item_id, image_url) 
             db_manager.update_user_state(user_id, UserState.REPORTING_WAIT_DESCRIPTION, current_item_id) 
 
             line_bot_api.reply_message(
@@ -215,7 +207,7 @@ def handle_location_message(event):
 
     # 直接使用枚舉物件進行比較
     if current_state_enum == UserState.REPORTING_WAIT_LOCATION and current_item_id:
-        location_info = event.message.address # 或 event.message.latitude, event.message.longitude
+        location_info = event.message.address 
         db_manager.save_item_location(current_item_id, location_info)
         db_manager.clear_user_state(user_id) # 完成上報，清除狀態
 
@@ -265,17 +257,11 @@ def create_lost_items_flex_message(items):
                     ButtonComponent(
                         style='link',
                         height='sm',
-                        # --- 修正「聯繫上報者」按鈕的 URI ---
-                        # 由於無法直接聯繫，且 line.me/ti/p/ 可能無效，暫時指向 Line 官方網站。
-                        # 如果需要真實聯繫，應讓用戶在上報時提供公開聯絡方式。
                         action=URIAction(label='了解 LINE 應用', uri='https://line.me/zh-hant/') 
                     ),
                     ButtonComponent(
                         style='link',
                         height='sm',
-                        # --- 修正「地圖查看位置」按鈕的 URI ---
-                        # 使用標準的 Google Maps 搜尋 URL，並確保是 HTTPS
-                        # 對 location 進行 URL 編碼
                         action=URIAction(label='地圖查看位置', uri=f'https://www.google.com/maps/search/?api=1&query={quote(item.get("location", ""))}')
                     )
                 ]
@@ -290,10 +276,6 @@ def create_lost_items_flex_message(items):
     else:
         return TextSendMessage(text="目前沒有失物招領資訊。")
 
-# ... (if __name__ == "__main__": 部分) ...
-
 if __name__ == "__main__":
-    # 在運行前確保上傳資料夾和資料庫資料夾存在
-    # db_manager 會在初始化時創建 data/ 資料夾
     if not os.path.exists(Config.UPLOAD_FOLDER):
         os.makedirs(Config.UPLOAD_FOLDER)
