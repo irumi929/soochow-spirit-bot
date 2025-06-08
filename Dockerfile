@@ -31,5 +31,8 @@ EXPOSE 7860
 
 # 定義容器啟動時運行的命令。
 # 使用 Shell Form，讓 $PORT 環境變數能夠被正確解析。
-# 如果 $PORT 環境變數不存在，則預設使用 7860 埠。
-CMD gunicorn --worker-class gthread --workers 1 --timeout 120 --bind "0.0.0.0:${PORT:-7860}" app:app
+# 新增 `sh -c` 以便於執行多個命令並確保 `&&` 正確運行
+# 新增 `echo` 語句，強制在 Gunicorn 啟動前輸出日誌
+CMD sh -c "echo 'Starting Gunicorn via Docker CMD...' && \
+           echo 'Attempting to bind to PORT: ${PORT:-7860}' && \
+           gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app"
