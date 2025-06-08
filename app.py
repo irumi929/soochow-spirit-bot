@@ -33,8 +33,6 @@ from linebot.models import (
 )
 
 
-
-
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -115,41 +113,15 @@ def uploaded_file(filename):
     # 確保只提供 UPLOAD_FOLDER 中的檔案，防止路徑遍歷攻擊
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-'''
-# --- Hugging Face API 調用函數 ---
-def get_huggingface_response(user_text):
-    api_url = Config.HUGGINGFACE_API_URL
-    if not api_url:
-        print("HUGGINGFACE_API_URL not set in config.")
-        return "很抱歉，AI 服務配置不完整。"
-
-    headers = {}
-    if Config.HUGGINGFACE_API_TOKEN:
-        headers['Authorization'] = f"Bearer {Config.HUGGINGFACE_API_TOKEN}"
-    headers['Content-Type'] = 'application/json'
-
-    payload = {"inputs": user_text}
-    try:
-        response = requests.post(api_url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status() # 檢查 HTTP 錯誤狀態碼 (4xx 或 5xx)
-        result = response.json()
-        if isinstance(result, list) and result:
-            ai_reply = result[0].get("generated_text", "不好意思，我沒有理解您的意思。")
-        elif isinstance(result, dict) and 'generated_text' in result:
-            ai_reply = result.get("generated_text", "不好意思，我沒有理解您的意思。")
-        else:
-            ai_reply = "不好意思，AI 回覆格式不正確。"
-
-        return ai_reply
-    except requests.exceptions.RequestException as e:
-        print(f"Error calling Hugging Face API: {e}")
-        return "很抱歉，AI 服務目前無法回應，請稍後再試。"
-    except Exception as e:
-        print(f"Error processing Hugging Face response: {e}")
-        return "很抱歉，AI 回覆處理出錯。"
-'''
-@app.route("/callback", methods=['POST'])
+# --- **關鍵修正：讓 /callback 路由同時處理 POST 和 GET 請求** ---
+@app.route("/callback", methods=['POST', 'GET']) # <-- 在這裡添加 'GET' 方法
 def callback():
+    if request.method == 'GET':
+        # 如果是 GET 請求，很可能是 Line Webhook 驗證
+        logging.info("INFO: Received GET request to /callback (likely Line Webhook verification).")
+        return "OK", 200 # 返回 200 OK，這是 Line 驗證所期望的。
+
+    # 以下是原始的 POST 請求處理邏輯
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
@@ -164,7 +136,7 @@ def callback():
         import traceback
         traceback.print_exc()
         abort(500)
-    return 'OK' # 成功處理後返回 200 OK
+    return 'OK' # 成功處理 POST 請求後返回 200 OK
 
 # --- [修改點 3] 文本訊息處理函數 (使用 v3 事件和訊息物件) ---
 @handler.add(MessageEvent, message=TextMessageContent) # 使用 TextMessageContent
@@ -210,7 +182,7 @@ def handle_text_message(event):
     else:
         # 預設：交給 AI 回覆
         print(f"用戶發送了非指令/流程訊息: {user_message}，嘗試呼叫 AI")
-        #ai_response = get_huggingface_response(user_message)
+        #ai_response = get_huggingface_response(user_message) # 這行仍被註解掉了，請確認是否需要啟用
         #reply_messages.append(V3TextMessage(text=ai_response))
 
     # --- [修改點 4] 使用 LINE Bot SDK v3 的方式回覆訊息 ---
@@ -382,25 +354,11 @@ def create_lost_items_flex_message(items):
 # --- [修改點 10] 移除 Flask 應用程式啟動代碼 ---
 # 由於您使用 Docker 和 Gunicorn，這些代碼不再需要
 # if __name__ == "__main__":
-#     app.run(host='0.0.0.0', port=5000, debug=True)
+#    app.run(host='0.0.0.0', port=5000, debug=True)
 
 @app.route("/")
 def health_check():
     logging.info("INFO: Health check route / accessed. Returning OK.")
-    return "OK", 200
+    return "Hello, I am running! (Flask App on Hugging Face Spaces)", 200 # <-- 保持這個訊息，方便您在瀏覽器確認
 
 logging.info("INFO: Flask application is fully initialized.")
-
-'''
-# --- 新增的網路監聽日誌 ---
-try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('0.0.0.0', 8000))
-    logging.info("INFO: Successfully bound to 0.0.0.0:8000 (socket test).")
-    s.close()
-except Exception as e:
-    logging.error(f"FATAL ERROR: Could not bind to 0.0.0.0:8000 (socket test): {e}", exc_info=True)
-    exit(1)
-# --- 結束新增 ---
-'''
-
