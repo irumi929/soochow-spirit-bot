@@ -1,0 +1,25 @@
+# Python 相關
+__pycache__/        # 程式碼編譯產生的快取檔案
+*.pyc               # 編譯後的 Python 位元組碼檔案
+*.pyo
+*.pyd
+.Python
+env/                # 常見的虛擬環境資料夾名稱
+venv/               # 常見的虛擬環境資料夾名稱
+.venv/              # 您目前的虛擬環境資料夾名稱
+
+# 應用程式產生的動態檔案 (非常重要！這些不應推送到 Git 儲存庫)
+data/               # 假設您的 SQLite 資料庫檔案 lost_and_found.db 位於此資料夾
+*.db  
+*.sqlite              # 忽略所有副檔名為 .db 的檔案（確保您的資料庫檔案被忽略）
+static/uploads/     # 忽略所有用戶上傳的圖片或其他動態生成的檔案
+
+# Log 檔案
+*.log               # 忽略日誌檔案
+             
+
+# IDE 和作業系統相關檔案
+.vscode/            # VS Code 編輯器配置檔
+.idea/              # PyCharm 或其他 JetBrains IDE 的配置檔
+.DS_Store           # macOS 系統檔案
+Thumbs.db           # Windows 系統縮圖快取
