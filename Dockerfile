@@ -17,22 +17,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 創建並設置靜態文件和數據庫文件夾的權限
-# Hugging Face Spaces 的運行用戶通常是 UID 1000。
-# 我們讓這個用戶成為這些目錄的所有者，並給予寫入權限。
-# 確保 /tmp 目錄的權限，因為您的日誌顯示數據庫在 /tmp
 RUN mkdir -p /app/static/uploads && chown -R 1000:0 /app/static && chmod -R 775 /app/static
 RUN mkdir -p /app/data && chown -R 1000:0 /app/data && chmod -R 775 /app/data
-# 由於您的數據庫在 /tmp，確保 /tmp 目錄及其內容對所有用戶可寫
 RUN chmod -R 777 /tmp # 確保 /tmp 目錄及其內容對所有用戶可寫
 
 # 聲明應用程式將監聽的埠。
-# 這是 Hugging Face Spaces 預期的埠，但實際綁定由 CMD 指令控制。
 EXPOSE 7860
 
-# 定義容器啟動時運行的命令。
-# 使用 Shell Form，讓 $PORT 環境變數能夠被正確解析。
-# 新增 `sh -c` 以便於執行多個命令並確保 `&&` 正確運行
-# 新增 `echo` 語句，強制在 Gunicorn 啟動前輸出日誌
-CMD sh -c "echo 'Starting Gunicorn via Docker CMD...' && \
-           echo 'Attempting to bind to PORT: ${PORT:-7860}' && \
-           gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app"
+# **僅用於診斷：檢查 gunicorn 可執行性**
+# 執行一個簡單的 echo 命令，然後嘗試執行 `which gunicorn` 和 `gunicorn --version`。
+# 如果這些命令都無法產生日誌，那問題可能非常底層。
+CMD sh -c "echo '--- Starting Gunicorn Executable Check ---' && \
+           which gunicorn && \
+           gunicorn --version && \
+           echo '--- Gunicorn Check Complete ---' && \
+           sleep 30" # 讓容器保持運行一段時間，以便捕獲日誌
