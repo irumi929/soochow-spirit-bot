@@ -25,3 +25,4 @@ RUN chmod -R 775 /app/static /app/data # 給予所有者和組讀寫執行權限
 EXPOSE 8000
 # 嘗試使用舊的 IPv4 任何地址，雖然您已在使用，但重寫一次確保
 CMD ["gunicorn", "--worker-class", "gthread", "--workers", "1", "--timeout", "120", "--bind", "0:8000", "app:app"]
+EXPOSE 7860
