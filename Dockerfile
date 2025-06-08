@@ -22,7 +22,7 @@ COPY . .
 # 確保 /tmp 目錄的權限，因為您的日誌顯示數據庫在 /tmp
 RUN mkdir -p /app/static/uploads && chown -R 1000:0 /app/static && chmod -R 775 /app/static
 RUN mkdir -p /app/data && chown -R 1000:0 /app/data && chmod -R 775 /app/data
-# 由於您的數據庫在 /tmp，確保 /tmp 目錄有寫入權限 (通常默認就有，但安全起見檢查一下)
+# 由於您的數據庫在 /tmp，確保 /tmp 目錄及其內容對所有用戶可寫
 RUN chmod -R 777 /tmp # 確保 /tmp 目錄及其內容對所有用戶可寫
 
 # 聲明應用程式將監聽的埠。
@@ -30,7 +30,6 @@ RUN chmod -R 777 /tmp # 確保 /tmp 目錄及其內容對所有用戶可寫
 EXPOSE 7860
 
 # 定義容器啟動時運行的命令。
-# 使用 $PORT 環境變數，這是 PaaS 平台常見的傳遞埠號方式。
-# 如果 $PORT 不存在，則預設使用 7860 埠。
-# 這是確保 Gunicorn 綁定到正確埠的關鍵。
-CMD ["gunicorn", "--worker-class", "gthread", "--workers", "1", "--timeout", "120", "--bind", "0.0.0.0:${PORT:-7860}", "app:app"]
+# 使用 Shell Form，讓 $PORT 環境變數能夠被正確解析。
+# 如果 $PORT 環境變數不存在，則預設使用 7860 埠。
+CMD gunicorn --worker-class gthread --workers 1 --timeout 120 --bind "0.0.0.0:${PORT:-7860}" app:app
