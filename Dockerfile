@@ -29,7 +29,6 @@ RUN chmod -R 777 /tmp # 確保 /tmp 目錄及其內容對所有用戶可寫
 # 這是 Hugging Face Spaces 預期的埠，但實際綁定由 CMD 指令控制。
 EXPOSE 7860
 
-# 定義容器啟動時運行的命令。
-# 使用 Shell Form，讓 $PORT 環境變數能夠被正確解析。
-# 如果 $PORT 環境變數不存在，則預設使用 7860 埠。
-CMD gunicorn --worker-class gthread --workers 1 --timeout 120 --bind "0.0.0.0:${PORT:-7860}" app:app
+# **僅用於診斷：執行一個簡單的 ls 命令來檢查日誌輸出**
+# 如果您看到這個命令的輸出，那麼容器至少可以執行命令。
+CMD ls -l /app
