@@ -187,12 +187,13 @@ def handle_text_message(event):
         else:
             db_manager.clear_user_state(user_id)
             reply_messages.append(V3TextMessage(text="上傳流程錯誤，請重新開始上傳失物的步驟。"))
+    '''
     else:
         # 預設：交給 AI 回覆
         print(f"用戶發送了非指令/流程訊息: {user_message}，嘗試呼叫 AI")
         ai_response = get_huggingface_response(user_message)
         reply_messages.append(V3TextMessage(text=ai_response))
-
+    '''
     # --- [修改點 4] 使用 LINE Bot SDK v3 的方式回覆訊息 ---
     # 使用 ReplyMessageRequest 來發送回覆
     if reply_messages: # 確保有訊息要回覆
