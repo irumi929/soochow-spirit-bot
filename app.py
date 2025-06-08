@@ -70,6 +70,9 @@ except Exception as e:
 
 app = Flask(__name__)
 
+current_port = os.getenv('PORT')
+logging.info(f"DEBUG: Application trying to run on PORT: {current_port}")
+
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
