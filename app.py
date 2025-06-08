@@ -95,6 +95,7 @@ def uploaded_file(filename):
     # 確保只提供 UPLOAD_FOLDER 中的檔案，防止路徑遍歷攻擊
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+'''
 # --- Hugging Face API 調用函數 ---
 def get_huggingface_response(user_text):
     api_url = Config.HUGGINGFACE_API_URL
@@ -126,7 +127,7 @@ def get_huggingface_response(user_text):
     except Exception as e:
         print(f"Error processing Hugging Face response: {e}")
         return "很抱歉，AI 回覆處理出錯。"
-
+'''
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
