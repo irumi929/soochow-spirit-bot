@@ -4,6 +4,7 @@ import requests
 from urllib.parse import quote
 import socket
 from flask import Flask, request, abort, send_from_directory
+import json # 新增導入
 
 # --- [修改點 1] 導入 LINE Bot SDK v3 的模組 ---
 from linebot.v3.messaging import (
@@ -135,10 +136,19 @@ def callback():
     app.logger.info("Request body: " + body)
 
     try:
+        # 在嘗試處理事件之前，檢查 request body 是否為空或 events 列表為空
+        json_body = json.loads(body) # 嘗試解析 JSON body
+        if not json_body.get('events'): # 如果 'events' 鍵不存在或列表為空
+            logging.info("INFO: Received POST request to /callback with empty or no events. Returning OK for verification.")
+            return 'OK', 200 # 直接返回 OK，因為這是 Line 在某些驗證或測試時的行為
+
         handler.handle(body, signature)
     except InvalidSignatureError:
         print("Invalid signature. Please check your channel access token/channel secret.")
         abort(400)
+    except json.JSONDecodeError:
+        logging.error("ERROR: Received non-JSON body to /callback POST request. Returning 400 Bad Request.")
+        abort(400, description="Invalid JSON format.")
     except Exception as e: # 捕獲其他可能發生的錯誤
         print(f"An unexpected error occurred: {e}")
         import traceback
