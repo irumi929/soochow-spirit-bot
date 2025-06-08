@@ -1,11 +1,7 @@
 FROM python:3.10-slim
 
 # 安裝系統依賴，特別新增 `build-essential`, `libffi-dev`, `libssl-dev`
-RUN apt-get update && \
-    apt-get install -y git git-lfs ffmpeg libsm6 libxext6 cmake rsync libgl1-mesa-glx \
-                       build-essential libffi-dev libssl-dev && \ # <-- 新增這些關鍵依賴
-    rm -rf /var/lib/apt/lists/* && \
-    git lfs install
+RUN apt-get update && apt-get install -y git git-lfs ffmpeg libsm6 libxext6 cmake rsync libgl1-mesa-glx build-essential libffi-dev libssl-dev && rm -rf /var/lib/apt/lists/* && git lfs install
 
 # 設定工作目錄
 WORKDIR /app
