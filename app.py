@@ -114,11 +114,19 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # --- **關鍵修正：讓 /callback 路由同時處理 POST 和 GET 請求** ---
-@app.route("/callback", methods=['POST', 'GET']) # <-- 在這裡添加 'GET' 方法
+@app.route("/callback", methods=['POST', 'GET'])
 def callback():
+    # --- 新增的深度日誌 ---
+    logging.info(f"DEBUG: /callback route received a {request.method} request.")
+    logging.info(f"DEBUG: Request URL: {request.url}")
+    logging.info(f"DEBUG: Request Headers:")
+    for header, value in request.headers.items():
+        logging.info(f"DEBUG:   {header}: {value}")
+    # --- 結束新增 ---
+
     if request.method == 'GET':
         # 如果是 GET 請求，很可能是 Line Webhook 驗證
-        logging.info("INFO: Received GET request to /callback (likely Line Webhook verification).")
+        logging.info("INFO: Received GET request to /callback (likely Line Webhook verification). Returning OK.")
         return "OK", 200 # 返回 200 OK，這是 Line 驗證所期望的。
 
     # 以下是原始的 POST 請求處理邏輯
@@ -358,6 +366,13 @@ def create_lost_items_flex_message(items):
 
 @app.route("/")
 def health_check():
+    # --- 新增的深度日誌 ---
+    logging.info(f"DEBUG: / route received a {request.method} request.")
+    logging.info(f"DEBUG: Request URL: {request.url}")
+    logging.info(f"DEBUG: Request Headers:")
+    for header, value in request.headers.items():
+        logging.info(f"DEBUG:   {header}: {value}")
+    # --- 結束新增 ---
     logging.info("INFO: Health check route / accessed. Returning OK.")
     return "Hello, I am running! (Flask App on Hugging Face Spaces)", 200 # <-- 保持這個訊息，方便您在瀏覽器確認
 
