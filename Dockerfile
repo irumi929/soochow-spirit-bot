@@ -1,8 +1,9 @@
 FROM python:3.10-slim
 
-# 安裝系統依賴 (從您之前的日誌複製過來，確保完整性)
+# 安裝系統依賴，特別新增 `build-essential`, `libffi-dev`, `libssl-dev`
 RUN apt-get update && \
-    apt-get install -y git git-lfs ffmpeg libsm6 libxext6 cmake rsync libgl1-mesa-glx && \
+    apt-get install -y git git-lfs ffmpeg libsm6 libxext6 cmake rsync libgl1-mesa-glx \
+                       build-essential libffi-dev libssl-dev && \ # <-- 新增這些關鍵依賴
     rm -rf /var/lib/apt/lists/* && \
     git lfs install
 
@@ -24,11 +25,6 @@ RUN chmod -R 777 /tmp # 確保 /tmp 目錄及其內容對所有用戶可寫
 # 聲明應用程式將監聽的埠。
 EXPOSE 7860
 
-# **僅用於診斷：檢查 gunicorn 可執行性**
-# 執行一個簡單的 echo 命令，然後嘗試執行 `which gunicorn` 和 `gunicorn --version`。
-# 如果這些命令都無法產生日誌，那問題可能非常底層。
-CMD sh -c "echo '--- Starting Gunicorn Executable Check ---' && \
-           which gunicorn && \
-           gunicorn --version && \
-           echo '--- Gunicorn Check Complete ---' && \
-           sleep 30" # 讓容器保持運行一段時間，以便捕獲日誌
+# 定義容器啟動時運行的命令。
+# 這次直接嘗試啟動 Gunicorn，因為我們預期依賴問題已解決。
+CMD gunicorn --worker-class gthread --workers 1 --timeout 120 --bind "0.0.0.0:${PORT:-7860}" app:app
