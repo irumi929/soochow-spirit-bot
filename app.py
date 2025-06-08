@@ -70,6 +70,23 @@ except Exception as e:
 
 app = Flask(__name__)
 
+try:
+    # 這裡我們嘗試從 Gunicorn 相關的環境變數中獲取，或回退到 $PORT
+    # 注意：Gunicorn通常會設定自身的PORT，而不是直接用$PORT
+    # 但如果 $PORT 是唯一的，就用 $PORT
+    # 通常 Gunicorn 綁定的埠號就是它自己的 process 埠號
+    app_port = os.getenv('GUNICORN_LISTEN_PORT') # Gunicorn可能設置這個變數
+    if not app_port:
+        app_port = os.getenv('PORT', '5000') # 回退到 $PORT 或預設 5000
+    app.config['PORT'] = int(app_port)
+    logging.info(f"DEBUG: Flask application configured to run on PORT: {app.config['PORT']}")
+except ValueError:
+    logging.error("FATAL ERROR: PORT environment variable is not a valid integer. Defaulting to 5000.")
+    app.config['PORT'] = 5000 # 如果PORT不是數字，預設為5000
+except Exception as e:
+    logging.error(f"FATAL ERROR: Could not determine application PORT: {e}", exc_info=True)
+    app.config['PORT'] = 5000 # 任何其他錯誤也預設為5000
+
 current_port = os.getenv('PORT')
 logging.info(f"DEBUG: Application trying to run on PORT: {current_port}")
 
