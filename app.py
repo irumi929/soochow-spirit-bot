@@ -320,7 +320,6 @@ def create_lost_items_flex_message(items):
         location_text = f"位置: {item.get('location', '無')}"
         report_date_str = item.get('report_date', '無').split('T')[0]
 
-        # 直接構建單個 Bubble 的字典結構
         bubble = {
             "type": "bubble",
             "direction": "ltr",
@@ -395,15 +394,23 @@ def create_lost_items_flex_message(items):
             break
 
     if bubbles_json_list:
-        # 这是整个 Flex Message 的根字典结构，类型为 carousel
-        # 确保这个字典结构完全符合 LINE Flex Message 規範
         flex_carousel_container_dict = {
             "type": "carousel",
-            "contents": bubbles_json_list # 這裡的 contents 是多個 bubble 字典組成的列表
+            "contents": bubbles_json_list
         }
 
-        # V3FlexMessage 的 contents 參數直接接收這個完整的字典
-        return V3FlexMessage(alt_text="失物招領資訊", contents=flex_carousel_container_dict)
+        # *** 請確保這些行已正確添加！ ***
+        try:
+            flex_message_json_str = json.dumps(flex_carousel_container_dict, ensure_ascii=False)
+            final_contents_for_v3flexmessage = json.loads(flex_message_json_str)
+            print(f"DEBUG: Final Flex Message JSON structure: {final_contents_for_v3flexmessage}") # 打印出來檢查
+
+            return V3FlexMessage(alt_text="失物招領資訊", contents=final_contents_for_v3flexmessage)
+        except Exception as e:
+            print(f"Error during JSON serialization/deserialization for FlexMessage: {e}")
+            import traceback
+            traceback.print_exc()
+            return V3TextMessage(text="產生失物招領資訊失敗。")
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
     
