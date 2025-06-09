@@ -8,7 +8,7 @@ from linebot.models import FlexSendMessage, BubbleContainer, BoxComponent, TextC
 from config import Config
 from db_manager import DBManager, UserState
 import uuid
-#import requests 
+#import requests
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER

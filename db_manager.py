@@ -9,7 +9,7 @@ class UserState(Enum):
     REPORTING_WAIT_IMAGE = "reporting_wait_image" 
     REPORTING_WAIT_DESCRIPTION = "reporting_wait_description" 
     REPORTING_WAIT_LOCATION = "reporting_wait_location" 
-
+    
 class DBManager:
     def __init__(self, db_path):
         self.db_path = db_path
