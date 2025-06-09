@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <title>東吳教授Dcard搜尋</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            background: linear-gradient(120deg, #f8fafc 0%, #e0e7ff 100%);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 520px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(60, 72, 88, 0.13);
+            padding: 36px 32px 28px 32px;
+        }
+        h1 {
+            text-align: center;
+            color: #3b3b4f;
+            margin-bottom: 28px;
+            font-size: 2.2em;
+            letter-spacing: 2px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        label {
+            font-size: 1.1em;
+            color: #4b5563;
+        }
+        input[type="text"] {
+            padding: 10px 12px;
+            border: 1.5px solid #a5b4fc;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.2s;
+        }
+        input[type="text"]:focus {
+            border: 1.5px solid #6366f1;
+            outline: none;
+        }
+        button {
+            background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 0;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #818cf8 0%, #6366f1 100%);
+        }
+        .error {
+            color: #ef4444;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        h2 {
+            color: #6366f1;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 18px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 12px 14px;
+            box-shadow: 0 1px 4px rgba(99, 102, 241, 0.06);
+        }
+        a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        small {
+            color: #64748b;
+        }
+        .no-result {
+            text-align: center;
+            color: #64748b;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>老師推薦🐱</h1>
+        <form method="POST" action="/search">
+            <label for="department">請輸入科系名稱：</label>
+            <input type="text" id="department" name="department" value="{{ department | default('') }}" required />
+            <button type="submit">搜尋</button>
+        </form>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if results %}
+            <h2>搜尋結果：</h2>
+            <ol>
+            {% for r in results %}
+                <li>
+                    <a href="{{ r.url }}" target="_blank">{{ r.title }}</a><br />
+                    <small>{{ r.description }}</small>
+                </li>
+            {% endfor %}
+            </ol>
+        {% endif %}
+
+        {% if ai_summary_block %}
+            <h2>AI 統整結果：</h2>
+            <div style="background:#f9fafb;border-radius:8px;padding:18px 14px;margin-bottom:18px;">
+                {{ ai_summary_block | safe }}
+            </div>
+        {% endif %}
+        {% if ai_links_block %}
+            <h2>相關 Dcard 文章：</h2>
+            <div style="background:#eef6ff;border-radius:8px;padding:18px 14px;margin-bottom:18px;">
+                {{ ai_links_block | safe }}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
