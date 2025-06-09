@@ -17,9 +17,6 @@ from linebot.v3.messaging import (
     LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
     FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
     MessagingApiBlob,
-    # 這些現在被確認是在 linebot.v3.messaging 頂層
-    CarouselContainer, # <--- 修正後的導入路徑
-    BubbleContainer,   # <--- 修正後的導入路徑
 )
 
 # 從 linebot.v3.messaging.models 導入 Flex Message 的具體組件類別
@@ -29,6 +26,8 @@ from linebot.v3.messaging.models import (
     ImageComponent,
     ButtonComponent,
     URIAction,
+    CarouselContainer, # <--- 修正後的導入路徑
+    BubbleContainer,
 )
 
 from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
