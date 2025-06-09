@@ -53,19 +53,23 @@ except Exception as e:
     exit(1) # 如果 DBManager 無法導入，直接退出
 
 
-# 然後，使用 logging.info 打印環境變數
-logging.info(f"DEBUG: os.getenv('LINE_CHANNEL_ACCESS_TOKEN') = {os.getenv('LINE_CHANNEL_ACCESS_TOKEN')[:5] if os.getenv('LINE_CHANNEL_ACCESS_TOKEN') else 'None'}")
-logging.info(f"DEBUG: os.getenv('LINE_CHANNEL_SECRET') = {os.getenv('LINE_CHANNEL_SECRET')[:5] if os.getenv('LINE_CHANNEL_SECRET') else 'None'}")
-logging.info(f"DEBUG: os.getenv('HUGGINGFACE_API_URL') = {os.getenv('HUGGINGFACE_API_URL')}")
-logging.info(f"DEBUG: os.getenv('HUGGINGFACE_API_TOKEN') = {os.getenv('HUGGINGFACE_API_TOKEN')[:5] if os.getenv('HUGGINGFACE_API_TOKEN') else 'None'}")
+# 在Config導入之後，檢查讀取到的值是否完整
+logging.info(f"DEBUG: Read LINE_CHANNEL_ACCESS_TOKEN length: {len(Config.LINE_CHANNEL_ACCESS_TOKEN) if Config.LINE_CHANNEL_ACCESS_TOKEN else 0}")
+logging.info(f"DEBUG: Read LINE_CHANNEL_SECRET length: {len(Config.LINE_CHANNEL_SECRET) if Config.LINE_CHANNEL_SECRET else 0}")
+# 甚至可以打印幾個中間字符，例如：
+# logging.info(f"DEBUG: LINE_CHANNEL_ACCESS_TOKEN mid: {Config.LINE_CHANNEL_ACCESS_TOKEN[5:10] if Config.LINE_CHANNEL_ACCESS_TOKEN and len(Config.LINE_CHANNEL_ACCESS_TOKEN) > 10 else 'N/A'}")
 
+# 在 LINE Bot API 初始化部分
 try:
-    logging.info(f"DEBUG: Config.LINE_CHANNEL_ACCESS_TOKEN first few chars from Config: {Config.LINE_CHANNEL_ACCESS_TOKEN[:5] if Config.LINE_CHANNEL_ACCESS_TOKEN else 'None'}")
-    logging.info(f"DEBUG: Config.LINE_CHANNEL_SECRET first few chars from Config: {Config.LINE_CHANNEL_SECRET[:5] if Config.LINE_CHANNEL_SECRET else 'None'}")
-    logging.info(f"DEBUG: Config.SQLITE_DB_PATH = {Config.SQLITE_DB_PATH}") # 新增此行，確認資料庫路徑
+    configuration = Configuration(access_token=Config.LINE_CHANNEL_ACCESS_TOKEN)
+    line_bot_api = MessagingApi(ApiClient(configuration))
+    handler = WebhookHandler(Config.LINE_CHANNEL_SECRET)
+    logging.info("DEBUG: LINE Bot API and WebhookHandler initialized successfully.")
 except Exception as e:
-    logging.error(f"FATAL ERROR: Failed to access Config attributes: {e}", exc_info=True)
-    exit(1) # 如果無法訪問 Config 屬性，直接退出
+    # 強調這個錯誤，並確保在應用程式日誌中能看到它
+    logging.critical(f"FATAL ERROR: Failed to initialize LINE Bot API or WebhookHandler. Exception: {e}", exc_info=True)
+    line_bot_api = None # 確保它們是 None
+    handler = None
 
 app = Flask(__name__)
 
