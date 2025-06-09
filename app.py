@@ -17,6 +17,13 @@ from linebot.v3.messaging import (
     LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
     FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
     MessagingApiBlob,
+    CarouselContainer,
+    BubbleContainer,
+    BoxComponent,
+    TextComponent,
+    ImageComponent,
+    ButtonComponent,
+    URIAction,
 )
 from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
 from linebot.v3.webhooks import ( # 新增 webhooks 模組，用於事件物件
@@ -308,7 +315,7 @@ def create_lost_items_flex_message(items):
     if not items:
         return V3TextMessage(text="目前沒有失物招領資訊。")
 
-    bubbles_json_list = [] # 用於存放字典形式的 Flex Message 氣泡列表
+    bubbles = [] # 用於存放 BubbleContainer 物件
     for item in items:
         image_url = item.get('image_url', 'https://via.placeholder.com/450x300?text=No+Image')
         if image_url.startswith('/static/uploads/'):
@@ -320,97 +327,50 @@ def create_lost_items_flex_message(items):
         location_text = f"位置: {item.get('location', '無')}"
         report_date_str = item.get('report_date', '無').split('T')[0]
 
-        bubble = {
-            "type": "bubble",
-            "direction": "ltr",
-            "hero": {
-                "type": "image",
-                "url": image_url,
-                "size": "full",
-                "aspectRatio": "20:13",
-                "aspectMode": "cover",
-                "action": {
-                    "type": "uri",
-                    "label": "查看大圖",
-                    "uri": image_url
-                }
-            },
-            "body": {
-                "type": "box",
-                "layout": "vertical",
-                "contents": [
-                    {
-                        "type": "text",
-                        "text": description_text,
-                        "wrap": True,
-                        "size": "md"
-                    },
-                    {
-                        "type": "text",
-                        "text": location_text,
-                        "wrap": True,
-                        "size": "sm",
-                        "color": "#666666"
-                    },
-                    {
-                        "type": "text",
-                        "text": f"日期: {report_date_str}",
-                        "wrap": True,
-                        "size": "sm",
-                        "color": "#666666"
-                    }
+        # 使用 BubbleContainer 和其他組件類來構建 Flex Message
+        bubble = BubbleContainer(
+            direction='ltr',
+            hero=ImageComponent(
+                url=image_url,
+                size='full',
+                aspect_ratio='20:13',
+                aspect_mode='cover',
+                action=URIAction(label='查看大圖', uri=image_url)
+            ),
+            body=BoxComponent(
+                layout='vertical',
+                contents=[
+                    TextComponent(text=description_text, wrap=True, size='md'),
+                    TextComponent(text=location_text, wrap=True, size='sm', color='#666666'),
+                    TextComponent(text=f"日期: {report_date_str}", wrap=True, size='sm', color='#666666')
                 ]
-            },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri",
-                            "label": "了解 LINE 應用",
-                            "uri": "https://line.me/zh-hant/"
-                        }
-                    },
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri",
-                            "label": "地圖查看位置",
-                            "uri": f'http://maps.google.com/maps?q={quote(item.get("location", ""))}'
-                        }
-                    }
+            ),
+            footer=BoxComponent(
+                layout='vertical',
+                spacing='sm',
+                contents=[
+                    ButtonComponent(
+                        style='link',
+                        height='sm',
+                        action=URIAction(label='了解 LINE 應用', uri='https://line.me/zh-hant/')
+                    ),
+                    ButtonComponent(
+                        style='link',
+                        height='sm',
+                        action=URIAction(label='地圖查看位置', uri=f'http://maps.google.com/maps?q={quote(item.get("location", ""))}')
+                    )
                 ]
-            }
-        }
-        bubbles_json_list.append(bubble)
-        if len(bubbles_json_list) >= 10:
+            )
+        )
+        bubbles.append(bubble)
+        if len(bubbles) >= 10:
             break
 
-    if bubbles_json_list:
-        flex_carousel_container_dict = {
-            "type": "carousel",
-            "contents": bubbles_json_list
-        }
-
-        # *** 請確保這些行已正確添加！ ***
-        try:
-            flex_message_json_str = json.dumps(flex_carousel_container_dict, ensure_ascii=False)
-            final_contents_for_v3flexmessage = json.loads(flex_message_json_str)
-            print(f"DEBUG: Final Flex Message JSON structure: {final_contents_for_v3flexmessage}") # 打印出來檢查
-
-            return V3FlexMessage(alt_text="失物招領資訊", contents=final_contents_for_v3flexmessage)
-        except Exception as e:
-            print(f"Error during JSON serialization/deserialization for FlexMessage: {e}")
-            import traceback
-            traceback.print_exc()
-            return V3TextMessage(text="產生失物招領資訊失敗。")
+    if bubbles:
+        # 現在直接使用 CarouselContainer 物件
+        carousel_container = CarouselContainer(contents=bubbles)
+        # V3FlexMessage 的 contents 參數將直接接收這個 CarouselContainer 物件
+        return V3FlexMessage(alt_text="失物招領資訊", contents=carousel_container)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
     
