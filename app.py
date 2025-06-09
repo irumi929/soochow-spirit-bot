@@ -16,6 +16,7 @@ from linebot.v3.messaging import (
     ImageMessage as V3ImageMessage, # 將 v3 ImageMessage 重命名
     LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
     FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
+    MessagingApiBlob,
 )
 from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
 from linebot.v3.webhooks import ( # 新增 webhooks 模組，用於事件物件
@@ -100,6 +101,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 # --- [修改點 2] 初始化 LINE Bot API (使用 v3 方式) ---
 configuration = Configuration(access_token=Config.LINE_CHANNEL_ACCESS_TOKEN)
 line_bot_api = MessagingApi(ApiClient(configuration))
+line_blob_api = MessagingApiBlob(ApiClient(configuration))
 
 # WebhookHandler 實例化 (類別名不變，但引入路徑變了)
 handler = WebhookHandler(Config.LINE_CHANNEL_SECRET)
@@ -233,15 +235,12 @@ def handle_image_message(event):
 
     if current_state_enum == UserState.REPORTING_WAIT_IMAGE and current_item_id:
         try:
-            # line_bot_api.get_message_content 在 v3 中的行為不變
-            message_content = line_bot_api.get_message_content(event.message.id)
-            image_data = message_content.content # 獲取圖片的位元組數據
-
+            # *** 修改這行！從 line_bot_api 改為 line_blob_api ***
+            message_content = line_blob_api.get_message_content(event.message.id)
+            image_data = message_content.content
             original_filename = event.message.id + '.jpg'
             unique_filename = f"{uuid.uuid4()}_{original_filename}"
-
             local_file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-
             with open(local_file_path, 'wb') as f:
                 f.write(image_data)
 
