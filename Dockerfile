@@ -6,13 +6,13 @@ RUN apt-get update && apt-get install -y git git-lfs ffmpeg libsm6 libxext6 cmak
 # 設定工作目錄
 WORKDIR /app
 
-# 複製 requirements.txt 並安裝 Python 依賴
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
 # --- 新增這兩行來強制後續層不使用快取 ---
 # 這一層每次都會變化，因為時間戳不同，從而使後續的層快取失效
 RUN echo $(date +%s) > /tmp/cache_buster_timestamp && cat /tmp/cache_buster_timestamp
+
+# 複製 requirements.txt 並安裝 Python 依賴
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 複製應用程式程式碼 (現在這一層肯定會被重新執行)
 COPY . .
