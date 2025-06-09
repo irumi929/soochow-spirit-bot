@@ -1,37 +1,38 @@
-FROM python:3.10-slim
-
-# 安裝系統依賴
-RUN apt-get update && apt-get install -y git git-lfs ffmpeg libsm6 libxext6 cmake rsync libgl1-mesa-glx build-essential libffi-dev libssl-dev && rm -rf /var/lib/apt/lists/* && git lfs install
+# 使用一個更通用的 Python 3.10 基礎映像
+# alpine 版本通常較小，但有時會導致一些編譯問題，我們暫時保持這個
+FROM python:3.10-slim-buster
 
 # 設定工作目錄
 WORKDIR /app
 
-# --- 新增這兩行來強制後續層不使用快取 ---
-# 這一層每次都會變化，因為時間戳不同，從而使後續的層快取失效
-RUN echo $(date +%s) > /tmp/cache_buster_timestamp && cat /tmp/cache_buster_timestamp
-
-# 複製 requirements.txt 並安裝 Python 依賴
+# 將 requirements.txt 複製到工作目錄
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# 複製應用程式程式碼 (現在這一層肯定會被重新執行)
+# 安裝所有依賴
+# 使用 --no-cache-dir 禁用 pip 緩存
+# 使用 --force-reinstall 強制重新安裝以避免任何現有問題
+# 並將日誌級別設置為更詳細的模式
+RUN pip install --no-cache-dir --force-reinstall -v -r requirements.txt
+
+# 將所有應用程式代碼複製到工作目錄
 COPY . .
 
-# 創建並設置靜態文件和數據庫文件夾的權限
-RUN mkdir -p /app/static/uploads && chown -R 1000:0 /app/static && chmod -R 775 /app/static
-RUN mkdir -p /app/data && chown -R 1000:0 /app/data && chmod -R 775 /app/data
-RUN chmod -R 777 /tmp # 確保 /tmp 目錄及其內容對所有用戶可寫
+# 設定環境變數 (根據您的需求可能需要調整)
+ENV PYTHONUNBUFFERED=1
+ENV GUNICORN_LISTEN_PORT=7860
 
-# 聲明應用程式將監聽的埠
+# 建立 uploads 目錄並設定權限
+# 設定 www-data 為應用程式運行用戶，確保其對 /app/static/uploads 有寫入權限
+RUN mkdir -p /app/static/uploads && chown -R 1000:0 /app/static && chmod -R 775 /app/static
+RUN mkdir -p /app/data && chown -R 1000:0 /app/data && chmod -R 775 /app/data # 為 db_manager 創建 /app/data
+
+# 如果您有其他需要寫入的目錄，也要設定類似的權限
+# RUN chmod -R 777 /tmp # 如果您的應用程式在 /tmp 寫入，這是必須的，但通常不推薦 777
+
+# 暴露應用程式端口
 EXPOSE 7860
 
-# 定義容器啟動時運行的命令。
-# 使用 `||` (OR) 操作符：如果 Gunicorn 成功啟動，則後面的循環不會執行。
-# 如果 Gunicorn 啟動失敗，則 `||` 後面的命令會執行，進入一個無限循環並持續輸出日誌。
-CMD sh -c "echo 'Attempting Gunicorn startup...' && \
-           stdbuf -oL gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app || \
-           ( echo 'Gunicorn failed to start. Entering infinite loop for debugging.' && \
-             while true; do \
-                 echo 'Container is alive but Gunicorn failed. Check previous logs for errors or configuration.' && \
-                 sleep 10; \
-             done )" # <--- 這裡，在括號 `(` 和 `)` 前後添加了空格。
+# 啟動應用程式
+# 使用 stdbuf -oL 確保日誌實時輸出
+# 使用 --timeout 0 來禁用 Gunicorn 超時 (對於調試和長期連接有用)
+CMD ["sh", "-c", "stdbuf -oL gunicorn --bind 0.0.0.0:7860 app:app --timeout 0"]
