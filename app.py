@@ -114,11 +114,11 @@ def uploaded_file(filename):
     # 確保只提供 UPLOAD_FOLDER 中的檔案，防止路徑遍歷攻擊
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# --- **關鍵修正：讓 /callback 路由同時處理 POST 和 GET 請求** ---
-@app.route("/callback", methods=['POST', 'GET'])
-def callback():
+# --- **核心修改：將 /callback 路由邏輯移動到根目錄 / ** ---
+@app.route("/", methods=['POST', 'GET']) # 將路由改為根目錄
+def handle_root_requests(): # 函數名稱可以改，以反映其處理多種請求的性質
     # --- 新增的深度日誌 ---
-    logging.info(f"DEBUG: /callback route received a {request.method} request.")
+    logging.info(f"DEBUG: / route received a {request.method} request (acting as webhook).")
     logging.info(f"DEBUG: Request URL: {request.url}")
     logging.info(f"DEBUG: Request Headers:")
     for header, value in request.headers.items():
@@ -126,34 +126,40 @@ def callback():
     # --- 結束新增 ---
 
     if request.method == 'GET':
-        # 如果是 GET 請求，很可能是 Line Webhook 驗證
-        logging.info("INFO: Received GET request to /callback (likely Line Webhook verification). Returning OK.")
-        return "OK", 200 # 返回 200 OK，這是 Line 驗證所期望的。
+        # 如果是 GET 請求，可能來自瀏覽器訪問，或者 Line Webhook 驗證
+        logging.info("INFO: Received GET request to / (likely health check or Line Webhook verification). Returning OK.")
+        # 您可以返回更詳細的健康檢查信息，或者簡單的 OK
+        return "Hello, I am running! (Flask App on Hugging Face Spaces)", 200 # 返回健康檢查訊息
 
-    # 以下是原始的 POST 請求處理邏輯
+    # 以下是處理 LINE Webhook 的 POST 請求邏輯
+    if handler is None: # 如果 handler 沒有被成功初始化
+        logging.error("ERROR: Line WebhookHandler is not initialized. Aborting POST request.")
+        abort(500, description="Line WebhookHandler not initialized.")
+
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
 
     try:
-        # 在嘗試處理事件之前，檢查 request body 是否為空或 events 列表為空
-        json_body = json.loads(body) # 嘗試解析 JSON body
-        if not json_body.get('events'): # 如果 'events' 鍵不存在或列表為空
-            logging.info("INFO: Received POST request to /callback with empty or no events. Returning OK for verification.")
-            return 'OK', 200 # 直接返回 OK，因為這是 Line 在某些驗證或測試時的行為
+        json_body = json.loads(body)
+        if not json_body.get('events'):
+            logging.info("INFO: Received POST request to / with empty or no events. Returning OK for verification.")
+            return 'OK', 200
 
         handler.handle(body, signature)
     except InvalidSignatureError:
         print("Invalid signature. Please check your channel access token/channel secret.")
+        logging.error("ERROR: Invalid signature. Check your channel access token/channel secret.")
         abort(400)
     except json.JSONDecodeError:
-        logging.error("ERROR: Received non-JSON body to /callback POST request. Returning 400 Bad Request.")
+        logging.error("ERROR: Received non-JSON body to / POST request. Returning 400 Bad Request.")
         abort(400, description="Invalid JSON format.")
-    except Exception as e: # 捕獲其他可能發生的錯誤
+    except Exception as e:
         print(f"An unexpected error occurred: {e}")
         import traceback
-        traceback.print_exc()
+        logging.error(f"ERROR: An unexpected error occurred: {e}\n{traceback.format_exc()}")
         abort(500)
+
     return 'OK' # 成功處理 POST 請求後返回 200 OK
 
 # --- [修改點 3] 文本訊息處理函數 (使用 v3 事件和訊息物件) ---
