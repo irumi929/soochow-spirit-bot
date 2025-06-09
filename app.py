@@ -6,6 +6,7 @@ import socket
 from flask import Flask, request, abort, send_from_directory
 import json # 新增導入
 
+
 # --- 從 linebot.v3.messaging 導入核心 API 和頂層訊息類別 ---
 from linebot.v3.messaging import (
     Configuration,
