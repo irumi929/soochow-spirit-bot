@@ -23,15 +23,12 @@ from linebot.models import (
 from linebot.models import TextSendMessage
 
 
-# --- 嘗試導入 FlexMessage，如果失敗則提供備用方案 ---
-FlexMessage = None # 預設為 None
+FlexSendMessage = None
 try:
-    from linebot.models import FlexMessage
-    logging.info("DEBUG: FlexMessage imported successfully from linebot.models.")
+    from linebot.models import FlexSendMessage
+    logging.info("DEBUG: FlexSendMessage imported successfully from linebot.models.")
 except ImportError as e:
-    logging.warning(f"WARNING: Could not import FlexMessage from linebot.models: {e}. Flex Message functionality will be limited or replaced with text messages.")
-    # 在這裡我們可以定義一個假的 FlexMessage 類，或者直接讓它保持 None
-    # 這樣在 create_lost_items_flex_message 中可以檢查它是否為 None
+    logging.warning(f"WARNING: Could not import FlexSendMessage: {e}. Flex Message functionality will be limited or replaced with text messages.")
 
 try:
     from config import Config
@@ -155,7 +152,7 @@ def handle_text_message(event):
         items = db_manager.retrieve_lost_items()
         if items:
             # --- 判斷 FlexMessage 是否成功導入 ---
-            if FlexMessage: # 如果 FlexMessage 成功導入，才使用 Flex Message
+            if FlexSendMessage: # 如果 FlexMessage 成功導入，才使用 Flex Message
                 flex_message = create_lost_items_flex_message(items)
                 line_bot_api.reply_message(event.reply_token, flex_message)
             else: # 否則回退到文字訊息
@@ -285,8 +282,8 @@ def handle_location_message(event):
         )
 
 def create_lost_items_flex_message(items):
-    # --- 再次檢查 FlexMessage 是否可用 ---
-    if not FlexMessage or not BubbleContainer or not CarouselContainer or not BoxComponent or not TextComponent or not ImageComponent or not ButtonComponent or not URIAction:
+  
+    if not FlexSendMessage or not BubbleContainer or not CarouselContainer or not BoxComponent or not TextComponent or not ImageComponent or not ButtonComponent or not URIAction:
         logging.warning("Flex Message components are not fully available. Returning a simple text message.")
         response_text = "目前有以下失物招領（由於 Flex Message 無法顯示）：\n"
         for i, item in enumerate(items):
@@ -349,7 +346,7 @@ def create_lost_items_flex_message(items):
         if len(bubbles) >= 10:
             break
 
-    return FlexMessage(alt_text="失物招領資訊", contents=CarouselContainer(contents=bubbles))
+    return FlexSendMessage(alt_text="失物招領資訊", contents=CarouselContainer(contents=bubbles))
 
 # 注意：這裡的 health_check 函數如果只處理 GET 請求，就不能和上面的 / 路由重複
 # 如果您想保留，可以改成只處理 GET 請求，或者將其功能合併到 handle_root_requests 中
