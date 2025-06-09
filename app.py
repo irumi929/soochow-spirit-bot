@@ -17,7 +17,6 @@ from linebot.v3.messaging import (
     LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
     FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
     MessagingApiBlob,
-    CarouselContainer as V3CarouselContainer,
 )
 from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
 from linebot.v3.webhooks import ( # 新增 webhooks 模組，用於事件物件
@@ -322,7 +321,7 @@ def create_lost_items_flex_message(items):
         location_text = f"位置: {item.get('location', '無')}"
         report_date_str = item.get('report_date', '無').split('T')[0]
 
-        # *** 將 BubbleContainer 替換為直接的字典結構 ***
+        # *** 這裡是 Flex Message 的單個 Bubble 的字典結構 ***
         bubble = {
             "type": "bubble",
             "direction": "ltr",
@@ -386,7 +385,7 @@ def create_lost_items_flex_message(items):
                         "action": {
                             "type": "uri",
                             "label": "地圖查看位置",
-                            "uri": f'http://maps.google.com/maps?q={quote(item.get("location", ""))}' # 簡化 Google Maps 查詢
+                            "uri": f'http://maps.google.com/maps?q={quote(item.get("location", ""))}'
                         }
                     }
                 ]
@@ -397,11 +396,13 @@ def create_lost_items_flex_message(items):
             break
 
     if bubbles_json:
-        # 請注意這裡的縮排！它們應該與 if 語句本身同級
-        # 或者比 if 語句多一層縮排，作為 if 語句的內容
-        # 這裡正確的縮排應該是：
-        carousel_contents = V3CarouselContainer(contents=bubbles_json)
-        return V3FlexMessage(alt_text="失物招領資訊", contents=carousel_contents)
+        # *** 這是 Flex Message 的頂層 Carousel 結構的字典表示 ***
+        flex_message_root_dict = {
+            "type": "carousel",
+            "contents": bubbles_json # 這裡的 contents 是多個 bubble 的列表
+        }
+        # 將這個完整的 Flex Message 字典直接傳遞給 V3FlexMessage 的 contents 參數
+        return V3FlexMessage(alt_text="失物招領資訊", contents=flex_message_root_dict)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
 @app.route("/")
