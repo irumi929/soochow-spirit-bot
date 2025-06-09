@@ -8,3 +8,4 @@ class Config:
 
     HUGGINGFACE_API_URL = os.getenv('HUGGINGFACE_API_URL')
     HUGGINGFACE_API_TOKEN = os.getenv('HUGGINGFACE_API_TOKEN')
+    
