@@ -10,7 +10,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 複製應用程式程式碼
+# --- 新增這兩行來強制後續層不使用快取 ---
+# 這一層每次都會變化，因為時間戳不同，從而使後續的層快取失效
+ARG CACHE_BREAKER=$(date +%s)
+RUN echo "Cache breaker: ${CACHE_BREAKER}"
+
+# 複製應用程式程式碼 (現在這一層肯定會被重新執行)
 COPY . .
 
 # 創建並設置靜態文件和數據庫文件夾的權限
@@ -25,9 +30,9 @@ EXPOSE 7860
 # 使用 `||` (OR) 操作符：如果 Gunicorn 成功啟動，則後面的循環不會執行。
 # 如果 Gunicorn 啟動失敗，則 `||` 後面的命令會執行，進入一個無限循環並持續輸出日誌。
 CMD sh -c "echo 'Attempting Gunicorn startup...' && \
-           stdbuf -oL gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app || \
-           (echo 'Gunicorn failed to start. Entering infinite loop for debugging.' && \
-            while true; do \
-                echo 'Container is alive but Gunicorn failed. Check previous logs for errors or configuration.' && \
-                sleep 10; \
-            done)"
+           stdbuf -oL gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app || \
+           (echo 'Gunicorn failed to start. Entering infinite loop for debugging.' && \
+            while true; do \
+                echo 'Container is alive but Gunicorn failed. Check previous logs for errors or configuration.' && \
+                sleep 10; \
+            done)"
