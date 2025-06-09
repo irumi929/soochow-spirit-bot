@@ -41,6 +41,9 @@
       <option value="chat">聊天區</option>
       <option value="announcements">公告區</option>
     </select>
+    <a href="club-announcements.html" class="btn btn-outline-secondary">
+    ➤ 公告管理頁
+    </a>
   </div>
 
   <div class="form-check mb-3">
@@ -115,7 +118,8 @@
       e.preventDefault();
       const category = document.getElementById('category').value;
       const content = document.getElementById('message').value.trim();
-      const is_announcement = document.getElementById('isAnnouncement').checked;
+      const is_announcement = document.getElementById('isAnnouncement').checked ? 1 : 0;
+
       if (!content) return alert('請輸入訊息');
 
       try {
@@ -129,6 +133,7 @@
         });
         if (res.ok) {
           document.getElementById('message').value = '';
+          document.getElementById('isAnnouncement').checked = false; // ✅ 自動取消勾選
           loadMessages();
         } else {
           const errText = await res.text();
