@@ -178,20 +178,20 @@ def handle_text_message(event):
 
     reply_messages = [] # 用於收集要回覆的訊息物件
 
-    if user_message == "撿到失物" or user_message == "上傳失物":
+    if user_message == "上報失物":
         new_item_id = db_manager.create_new_lost_item(user_id)
         db_manager.update_user_state(user_id, UserState.REPORTING_WAIT_IMAGE, new_item_id)
         reply_messages.append(V3TextMessage(text="好的，請您依照以下步驟上傳失物：\n1. 請先傳送失物的『圖片』。"))
-    elif user_message == "查看失物招領":
+    elif user_message == "找遺失物":
         items = db_manager.retrieve_lost_items()
         if items:
             flex_message = create_lost_items_flex_message(items)
             reply_messages.append(flex_message) # flex_message 已經是 V3FlexMessage 物件
         else:
             reply_messages.append(V3TextMessage(text="目前沒有失物招領資訊。"))
-    elif user_message == "取消上傳":
+    elif user_message == "取消上報":
         db_manager.clear_user_state(user_id)
-        reply_messages.append(V3TextMessage(text="已取消失物上傳。"))
+        reply_messages.append(V3TextMessage(text="已取消失物上報。"))
     # 處理流程中的文字訊息
     elif current_state_enum == UserState.REPORTING_WAIT_DESCRIPTION:
         if current_item_id:
@@ -373,8 +373,13 @@ def create_lost_items_flex_message(items):
             break
 
     if bubbles:
-        # 返回 V3 FlexMessage 物件
-        return V3FlexMessage(alt_text="失物招領資訊", contents=CarouselContainer(contents=bubbles))
+        # 將每個 bubble 轉換為字典
+        bubble_dicts = [bubble.as_dict() for bubble in bubbles]
+        # 將 CarouselContainer 轉換為字典
+        carousel_container_dict = CarouselContainer(contents=bubble_dicts).as_dict()
+
+        # 返回 V3 FlexMessage 物件，其 contents 應為字典
+        return V3FlexMessage(alt_text="失物招領資訊", contents=carousel_container_dict)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
 
