@@ -17,22 +17,13 @@ from linebot.v3.messaging import (
     LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
     FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
     MessagingApiBlob,
+    CarouselContainer as V3CarouselContainer,
 )
 from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
 from linebot.v3.webhooks import ( # 新增 webhooks 模組，用於事件物件
     MessageEvent, TextMessageContent, ImageMessageContent, LocationMessageContent
 )
 from linebot.v3.exceptions import InvalidSignatureError
-
-# --- [注意] 保留舊版 linebot.models 以兼容 Flex Message 的組件定義 ---
-# 雖然推薦全面升級，但 Flex Message 的組件定義 (BubbleContainer, BoxComponent 等)
-# 在 v3 的 MessagingApi 中還沒有直接的對應類別，通常這些是作為 JSON 結構傳遞的。
-# 為了避免重寫整個 Flex Message 結構，我們暫時保留這些舊版導入。
-# 未來如果您全面使用 v3，可能需要直接構建字典結構。
-from linebot.models import (
-    BubbleContainer, BoxComponent, TextComponent, ImageComponent,
-    ButtonComponent, URIAction, CarouselContainer
-)
 
 
 import logging
@@ -406,13 +397,14 @@ def create_lost_items_flex_message(items):
             break
 
     if bubbles_json:
-        # 直接構建整個 Flex Message 的字典結構
-        flex_message_json = {
-            "type": "carousel", # Flex Message 的頂層類型
-            "contents": bubbles_json # 包含多個 bubble 的列表
-        }
-        # 返回 V3 FlexMessage 物件，其 contents 參數接收這個完整的字典
-        return V3FlexMessage(alt_text="失物招領資訊", contents=flex_message_json)
+    # 使用 v3 的 CarouselContainer 來構建內容
+    # V3CarouselContainer 的 contents 參數期望一個列表，其中每個元素都是一個字典
+    # 也就是每個 bubble 的 JSON 表示。
+        carousel_contents = V3CarouselContainer(contents=bubbles_json)
+
+    # V3FlexMessage 的 contents 參數直接接收這個 V3CarouselContainer 實例。
+    # SDK 會負責將其序列化為正確的 JSON 格式。
+        return V3FlexMessage(alt_text="失物招領資訊", contents=carousel_contents)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
 
