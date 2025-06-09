@@ -406,11 +406,13 @@ def create_lost_items_flex_message(items):
             break
 
     if bubbles_json:
-        # V3FlexMessage 的 contents 直接接收字典
-        return V3FlexMessage(alt_text="失物招領資訊", contents={
-            "type": "carousel",
-            "contents": bubbles_json
-        })
+        # 直接構建整個 Flex Message 的字典結構
+        flex_message_json = {
+            "type": "carousel", # Flex Message 的頂層類型
+            "contents": bubbles_json # 包含多個 bubble 的列表
+        }
+        # 返回 V3 FlexMessage 物件，其 contents 參數接收這個完整的字典
+        return V3FlexMessage(alt_text="失物招領資訊", contents=flex_message_json)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
 
