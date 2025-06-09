@@ -22,3 +22,14 @@ yarn-error.log*
 
 # 忽略 macOS 系統檔
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+.venv/
+venv/
+env/
