@@ -397,17 +397,13 @@ def create_lost_items_flex_message(items):
             break
 
     if bubbles_json:
-    # 使用 v3 的 CarouselContainer 來構建內容
-    # V3CarouselContainer 的 contents 參數期望一個列表，其中每個元素都是一個字典
-    # 也就是每個 bubble 的 JSON 表示。
+        # 請注意這裡的縮排！它們應該與 if 語句本身同級
+        # 或者比 if 語句多一層縮排，作為 if 語句的內容
+        # 這裡正確的縮排應該是：
         carousel_contents = V3CarouselContainer(contents=bubbles_json)
-
-    # V3FlexMessage 的 contents 參數直接接收這個 V3CarouselContainer 實例。
-    # SDK 會負責將其序列化為正確的 JSON 格式。
         return V3FlexMessage(alt_text="失物招領資訊", contents=carousel_contents)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
-
 @app.route("/")
 def health_check():
     # --- 新增的深度日誌 ---
