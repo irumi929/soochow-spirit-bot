@@ -12,8 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # --- 新增這兩行來強制後續層不使用快取 ---
 # 這一層每次都會變化，因為時間戳不同，從而使後續的層快取失效
-ARG CACHE_BREAKER=$(date +%s)
-RUN echo "Cache breaker: ${CACHE_BREAKER}"
+RUN echo $(date +%s) > /tmp/cache_buster_timestamp && cat /tmp/cache_buster_timestamp
 
 # 複製應用程式程式碼 (現在這一層肯定會被重新執行)
 COPY . .
