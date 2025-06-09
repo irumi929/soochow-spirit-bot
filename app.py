@@ -308,9 +308,8 @@ def create_lost_items_flex_message(items):
     if not items:
         return V3TextMessage(text="目前沒有失物招領資訊。")
 
-    bubbles_json = [] # 用於存放字典形式的 Flex Message 氣泡
+    bubbles_json_list = [] # 用於存放字典形式的 Flex Message 氣泡列表
     for item in items:
-        # 確保圖片 URL 是 HTTPS
         image_url = item.get('image_url', 'https://via.placeholder.com/450x300?text=No+Image')
         if image_url.startswith('/static/uploads/'):
             base_url = f"https://{request.host}"
@@ -321,7 +320,7 @@ def create_lost_items_flex_message(items):
         location_text = f"位置: {item.get('location', '無')}"
         report_date_str = item.get('report_date', '無').split('T')[0]
 
-        # *** 這裡是 Flex Message 的單個 Bubble 的字典結構 ***
+        # 直接構建單個 Bubble 的字典結構
         bubble = {
             "type": "bubble",
             "direction": "ltr",
@@ -391,20 +390,23 @@ def create_lost_items_flex_message(items):
                 ]
             }
         }
-        bubbles_json.append(bubble)
-        if len(bubbles_json) >= 10:
+        bubbles_json_list.append(bubble)
+        if len(bubbles_json_list) >= 10:
             break
 
-    if bubbles_json:
-        # *** 這是 Flex Message 的頂層 Carousel 結構的字典表示 ***
-        flex_message_root_dict = {
+    if bubbles_json_list:
+        # 这是整个 Flex Message 的根字典结构，类型为 carousel
+        # 确保这个字典结构完全符合 LINE Flex Message 規範
+        flex_carousel_container_dict = {
             "type": "carousel",
-            "contents": bubbles_json # 這裡的 contents 是多個 bubble 的列表
+            "contents": bubbles_json_list # 這裡的 contents 是多個 bubble 字典組成的列表
         }
-        # 將這個完整的 Flex Message 字典直接傳遞給 V3FlexMessage 的 contents 參數
-        return V3FlexMessage(alt_text="失物招領資訊", contents=flex_message_root_dict)
+
+        # V3FlexMessage 的 contents 參數直接接收這個完整的字典
+        return V3FlexMessage(alt_text="失物招領資訊", contents=flex_carousel_container_dict)
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
+    
 @app.route("/")
 def health_check():
     # --- 新增的深度日誌 ---
