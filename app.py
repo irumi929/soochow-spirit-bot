@@ -1,15 +1,14 @@
 import os
+import re
 from flask import Flask, request, abort, send_from_directory
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, ImageMessage, TextSendMessage, LocationMessage
-from linebot.models import FlexSendMessage, BubbleContainer, BoxComponent, TextComponent, ImageComponent, ButtonComponent, URIAction, CarouselContainer
-
+from linebot.models import FlexSendMessage, BubbleContainer, BoxComponent, TextComponent, ImageComponent, ButtonComponent, URIAction, CarouselContainer 
 from config import Config
-from db_manager import DBManager, UserState 
+from db_manager import DBManager, UserState
 import uuid
-import requests 
-from urllib.parse import quote
+#import requests 
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
@@ -18,13 +17,9 @@ line_bot_api = LineBotApi(Config.LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(Config.LINE_CHANNEL_SECRET)
 db_manager = DBManager(Config.SQLITE_DB_PATH) 
 
-# --- Flask 靜態檔案路由 (用於提供本地儲存的圖片) ---
-@app.route('/static/uploads/<filename>')
-def uploaded_file(filename):
-    # 確保只提供 UPLOAD_FOLDER 中的檔案，防止路徑遍歷攻擊
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+UPLOAD_FOLDER = os.path.join(os.getcwd(), "static", "uploads")
 
-# --- Hugging Face API 調用函數 ---
+'''
 def get_huggingface_response(user_text):
     api_url = Config.HUGGINGFACE_API_URL
     if not api_url:
@@ -34,17 +29,15 @@ def get_huggingface_response(user_text):
     headers = {}
     if Config.HUGGINGFACE_API_TOKEN:
         headers['Authorization'] = f"Bearer {Config.HUGGINGFACE_API_TOKEN}"
-    headers['Content-Type'] = 'application/json' # 根據API要求
+    headers['Content-Type'] = 'application/json'
 
-    # 這是 Gradio API 的常見輸入格式，請根據您的 Spaces API 調整
-    payload = {"data": [user_text]}
+    payload = {"inputs": [user_text]}
 
     try:
         response = requests.post(api_url, headers=headers, json=payload, timeout=30)
         response.raise_for_status() # 檢查 HTTP 錯誤狀態碼 (4xx 或 5xx)
         result = response.json()
-        # 根據 Hugging Face Spaces 返回的數據結構提取 AI 回覆
-        ai_reply = result.get("data", ["不好意思，我沒有理解您的意思。"])[0] # 假設返回在 'data' 列表的第一個元素
+        ai_reply = result.get("inputs", ["不好意思，我沒有理解您的意思。"])[0] 
         return ai_reply
     except requests.exceptions.RequestException as e:
         print(f"Error calling Hugging Face API: {e}")
@@ -52,7 +45,7 @@ def get_huggingface_response(user_text):
     except Exception as e:
         print(f"Error processing Hugging Face response: {e}")
         return "很抱歉，AI 回覆處理出錯。"
-
+'''
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -65,28 +58,16 @@ def callback():
     except InvalidSignatureError:
         print("Invalid signature. Please check your channel access token/channel secret.")
         abort(400)
-    except Exception as e: # 捕獲其他可能發生的錯誤
-        print(f"An unexpected error occurred: {e}")
-        # 這裡打印詳細錯誤堆疊，以便調試
-        import traceback
-        traceback.print_exc()
-        abort(500)
-    return 'OK' # 成功處理後返回 200 OK
+    return 'OK'
 
-# --- 訊息處理器 ---
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     user_id = event.source.user_id
     user_message = event.message.text
+    current_state_enum, current_item_id = db_manager.get_user_state(user_id)
     
-    # 正確地獲取用戶狀態和當前項目ID
-    # current_state_enum 是 UserState 枚舉的一個成員 (例如 UserState.NONE)
-    # current_item_id 是字串或 None
-    current_state_enum, current_item_id = db_manager.get_user_state(user_id) 
-    
- 
-    if user_message == "撿到失物" or user_message == "上報失物":
+    if user_message == "我撿到失物" or user_message == "上報失物":
         new_item_id = db_manager.create_new_lost_item(user_id)
         db_manager.update_user_state(user_id, UserState.REPORTING_WAIT_IMAGE, new_item_id)
         line_bot_api.reply_message(
@@ -95,7 +76,7 @@ def handle_text_message(event):
         )
         return
 
-    elif user_message == "查看失物招領":
+    elif user_message == "找遺失物":
         items = db_manager.retrieve_lost_items()
         if items:
             flex_message = create_lost_items_flex_message(items)
@@ -109,43 +90,35 @@ def handle_text_message(event):
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="已取消失物上報。"))
         return
 
-    # 處理流程中的文字訊息
-    # 直接使用枚舉物件進行比較
     if current_state_enum == UserState.REPORTING_WAIT_DESCRIPTION:
         if current_item_id:
             db_manager.save_item_description(current_item_id, user_message)
-            # 更新狀態並傳遞當前的 item_id
             db_manager.update_user_state(user_id, UserState.REPORTING_WAIT_LOCATION, current_item_id)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="好的，請您提供撿到失物的『位置』(可直接傳送 Line 的位置訊息，或輸入文字描述)。")
             )
         else:
-            # 如果沒有 current_item_id 但處於等待描述的狀態，可能是流程出錯
-            db_manager.clear_user_state(user_id) # 清除狀態以防止循環錯誤
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="上報流程錯誤，請重新開始『我撿到失物』。"))
         return
+    
     elif current_state_enum == UserState.REPORTING_WAIT_LOCATION:
         if current_item_id:
             db_manager.save_item_location(current_item_id, user_message)
-            db_manager.clear_user_state(user_id) # 完成上報，清除狀態
+            db_manager.clear_user_state(user_id) 
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="感謝您上報失物！我們已將資訊發佈。")
             )
         else:
-            # 如果沒有 current_item_id 但處於等待位置的狀態
-            db_manager.clear_user_state(user_id)
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="上報流程錯誤，請重新開始『我撿到失物』。"))
         return
 
-    # 預設：交給 AI 回覆
     print(f"用戶發送了非指令/流程訊息: {user_message}，嘗試呼叫 AI")
-    ai_response = get_huggingface_response(user_message)
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=ai_response)
-    )
+    #ai_response = get_huggingface_response(user_message)
+    #line_bot_api.reply_message(
+        #event.reply_token,
+        #TextSendMessage(text=ai_response))
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
@@ -159,8 +132,7 @@ def handle_image_message(event):
 
             original_filename = event.message.id + '.jpg'
             unique_filename = f"{uuid.uuid4()}_{original_filename}"
-            
-            # 確保 UPLOAD_FOLDER 存在
+
             if not os.path.exists(app.config['UPLOAD_FOLDER']):
                 os.makedirs(app.config['UPLOAD_FOLDER'])
 
@@ -169,17 +141,13 @@ def handle_image_message(event):
             with open(local_file_path, 'wb') as f:
                 f.write(image_data)
 
-            # 確保生成的 URL 是 HTTPS
-            base_url = request.url_root.rstrip('/')
-            if not base_url.startswith('https://'):
-                base_url = f"https://{request.host}" 
-            
-            image_url = f"{base_url}/static/uploads/{unique_filename}"
-            print(f"Generated image URL (corrected): {image_url}") # 打印修正後的 URL
-         
-            
-            db_manager.save_item_image_url(current_item_id, image_url) 
-            db_manager.update_user_state(user_id, UserState.REPORTING_WAIT_DESCRIPTION, current_item_id) 
+            image_url = request.url_root.rstrip('/') + '/static/uploads/' + unique_filename
+
+            if not image_url.startswith('https://') and not app.debug: 
+                image_url = image_url.replace('http://', 'https://')
+
+            db_manager.save_item_image_url(current_item_id, image_url)
+            db_manager.update_user_state(user_id, UserState.REPORTING_WAIT_DESCRIPTION, current_item_id)
 
             line_bot_api.reply_message(
                 event.reply_token,
@@ -187,8 +155,6 @@ def handle_image_message(event):
             )
         except Exception as e:
             print(f"Error handling image message: {e}")
-            import traceback
-            traceback.print_exc()
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="圖片處理失敗，請再試一次。")
@@ -198,18 +164,21 @@ def handle_image_message(event):
             event.reply_token,
             TextSendMessage(text="目前不支援圖片上傳，請您先點選主選單的『我撿到失物』以開始上報流程。")
         )
-        
+
 @handler.add(MessageEvent, message=LocationMessage)
 def handle_location_message(event):
     user_id = event.source.user_id
-    # 正確地獲取用戶狀態和當前項目ID
     current_state_enum, current_item_id = db_manager.get_user_state(user_id)
 
-    # 直接使用枚舉物件進行比較
     if current_state_enum == UserState.REPORTING_WAIT_LOCATION and current_item_id:
-        location_info = event.message.address 
+        # 獲取經緯度
+        latitude = event.message.latitude
+        longitude = event.message.longitude
+
+        location_info = f"{latitude},{longitude}" 
+
         db_manager.save_item_location(current_item_id, location_info)
-        db_manager.clear_user_state(user_id) # 完成上報，清除狀態
+        db_manager.clear_user_state(user_id) 
 
         line_bot_api.reply_message(
             event.reply_token,
@@ -227,27 +196,27 @@ def create_lost_items_flex_message(items):
 
     bubbles = []
     for item in items:
-        image_url = item.get('image_url', 'https://via.placeholder.com/450x300?text=No+Image')
+        location = item.get("location", "")
         
-        description_text = f"描述: {item.get('description', '無')}"
-        location_text = f"位置: {item.get('location', '無')}"
-        report_date_str = item.get('report_date', '無').split('T')[0]
+        is_latlng = re.match(r'^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$', location.strip())
+
+        map_url = f"https://www.google.com/maps/search/?api=1&query={location}" if is_latlng else None
 
         bubble = BubbleContainer(
             direction='ltr',
             hero=ImageComponent(
-                url=image_url,
+                url=item.get('image_url', 'https://via.placeholder.com/450x300?text=No+Image'),
                 size='full',
                 aspect_ratio='20:13',
                 aspect_mode='cover',
-                action=URIAction(uri=image_url, label='查看大圖') # 這裡的 image_url 必須是 HTTPS
+                action=URIAction(uri=item.get('image_url', 'https://via.placeholder.com/450x300'), label='查看大圖')
             ),
             body=BoxComponent(
                 layout='vertical',
                 contents=[
-                    TextComponent(text=description_text, wrap=True, size='md'),
-                    TextComponent(text=location_text, wrap=True, size='sm', color='#666666'),
-                    TextComponent(text=f"日期: {report_date_str}", wrap=True, size='sm', color='#666666'),
+                    TextComponent(text=f"描述: {item.get('description', '無')}", wrap=True, size='md'),
+                    TextComponent(text=f"位置: {location}", wrap=True, size='sm', color='#666666'),
+                    TextComponent(text=f"日期: {item.get('report_date', '無').split('T')[0]}", wrap=True, size='sm', color='#666666'),
                 ]
             ),
             footer=BoxComponent(
@@ -257,25 +226,23 @@ def create_lost_items_flex_message(items):
                     ButtonComponent(
                         style='link',
                         height='sm',
-                        action=URIAction(label='了解 LINE 應用', uri='https://line.me/zh-hant/') 
-                    ),
-                    ButtonComponent(
-                        style='link',
-                        height='sm',
-                        action=URIAction(label='地圖查看位置', uri=f'https://www.google.com/maps/search/?api=1&query={quote(item.get("location", ""))}')
+                        action=URIAction(label='地圖查看位置', uri=map_url)
                     )
-                ]
+                ] if map_url else []  # 只有當 map_url 存在才顯示按鈕
             )
         )
+
         bubbles.append(bubble)
         if len(bubbles) >= 10:
             break
-    
-    if bubbles:
-        return FlexSendMessage(alt_text="失物招領資訊", contents=CarouselContainer(contents=bubbles))
-    else:
-        return TextSendMessage(text="目前沒有失物招領資訊。")
+
+    return FlexSendMessage(alt_text="失物招領資訊", contents=CarouselContainer(contents=bubbles))
+
+
+
 
 if __name__ == "__main__":
     if not os.path.exists(Config.UPLOAD_FOLDER):
-        os.makedirs(Config.UPLOAD_FOLDER)
+        os.makedirs(Config.UPLOAD_FOLDER)   
+    app.run(host='0.0.0.0', port=5000)
+

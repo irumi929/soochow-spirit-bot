@@ -1,15 +1,14 @@
 import sqlite3
 import os
 from enum import Enum
-from datetime import datetime # 導入 datetime 模組
+from datetime import datetime 
 
-# 定義用戶狀態的枚舉
 class UserState(Enum):
-    NONE = "none" # 初始狀態，沒有特定流程
-    REPORTING_START = "reporting_start" # 開始上報失物
-    REPORTING_WAIT_IMAGE = "reporting_wait_image" # 等待用戶上傳圖片
-    REPORTING_WAIT_DESCRIPTION = "reporting_wait_description" # 等待用戶輸入描述
-    REPORTING_WAIT_LOCATION = "reporting_wait_location" # 等待用戶輸入位置
+    NONE = "none" 
+    REPORTING_START = "reporting_start" 
+    REPORTING_WAIT_IMAGE = "reporting_wait_image" 
+    REPORTING_WAIT_DESCRIPTION = "reporting_wait_description" 
+    REPORTING_WAIT_LOCATION = "reporting_wait_location" 
 
 class DBManager:
     def __init__(self, db_path):
@@ -29,31 +28,28 @@ class DBManager:
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        # 創建用戶狀態表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_states (
                 user_id TEXT PRIMARY KEY,
                 state TEXT NOT NULL,
-                current_item_id TEXT -- 如果用戶正在上報，可以存儲當前操作的失物ID
+                current_item_id TEXT 
             )
         ''')
 
-        # 創建失物招領資訊表
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS lost_items (
                 item_id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL, -- 上報者的用戶ID
+                user_id TEXT NOT NULL, 
                 image_url TEXT,
                 description TEXT,
                 location TEXT,
                 report_date TEXT NOT NULL,
-                is_resolved BOOLEAN DEFAULT FALSE -- 是否已被領回或解決
+                is_resolved BOOLEAN DEFAULT FALSE 
             )
         ''')
         conn.commit()
         conn.close()
 
-    # --- 用戶狀態管理方法 ---
     def get_user_state(self, user_id):
         conn = self._get_connection()
         cursor = conn.cursor()
@@ -61,9 +57,8 @@ class DBManager:
         result = cursor.fetchone()
         conn.close()
         if result:
-            # 返回枚舉和 item_id
             return UserState(result[0]), result[1]
-        return UserState.NONE, None # 如果用戶沒有狀態，返回 NONE 狀態
+        return UserState.NONE, None 
 
     def update_user_state(self, user_id, new_state, current_item_id=None):
         conn = self._get_connection()
@@ -80,7 +75,6 @@ class DBManager:
         conn.commit()
         conn.close()
 
-    # --- 失物招領資訊管理方法 ---
     def create_new_lost_item(self, user_id):
         import uuid
         item_id = str(uuid.uuid4())
@@ -93,7 +87,7 @@ class DBManager:
         conn.close()
         return item_id
 
-    def save_item_image_url(self, item_id, image_url): # 這裡直接接收 item_id
+    def save_item_image_url(self, item_id, image_url): 
         conn = self._get_connection()
         cursor = conn.cursor()
         cursor.execute("UPDATE lost_items SET image_url = ? WHERE item_id = ?", (image_url, item_id))
