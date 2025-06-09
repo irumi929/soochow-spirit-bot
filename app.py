@@ -7,6 +7,7 @@ from flask import Flask, request, abort, send_from_directory
 import json # 新增導入
 
 # --- [修改點 1] 導入 LINE Bot SDK v3 的模組 ---
+# 從 linebot.v3.messaging 導入核心 API 和訊息類別
 from linebot.v3.messaging import (
     Configuration,
     ApiClient,
@@ -17,6 +18,10 @@ from linebot.v3.messaging import (
     LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
     FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
     MessagingApiBlob,
+)
+
+# 從 linebot.v3.messaging.models 導入 Flex Message 的具體組件類別
+from linebot.v3.messaging.models import (
     CarouselContainer,
     BubbleContainer,
     BoxComponent,
@@ -25,12 +30,12 @@ from linebot.v3.messaging import (
     ButtonComponent,
     URIAction,
 )
+
 from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
 from linebot.v3.webhooks import ( # 新增 webhooks 模組，用於事件物件
     MessageEvent, TextMessageContent, ImageMessageContent, LocationMessageContent
 )
 from linebot.v3.exceptions import InvalidSignatureError
-
 
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
