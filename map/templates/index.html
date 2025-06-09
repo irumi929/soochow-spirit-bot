@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東吳通靈地圖查詢</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 60px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+
+        input[type="submit"] {
+            padding: 12px 20px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #005fa3;
+        }
+
+        .chat-history {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .response-box {
+            background-color: #f8f8f8;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #0078d4;
+            white-space: pre-line;
+        }
+
+        .response-box.user {
+            background-color: #e1f0ff;
+            border-left-color: #0078d4;
+        }
+
+        .response-box.bot {
+            background-color: #f8f8f8;
+            border-left-color: #4CAF50;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <h1>🔮 東吳通靈地圖查詢</h1>
+        <div class="chat-history">
+            {% for message in chat_history %}
+            <div class="response-box {{ message.role }}">
+                {% if message.role == 'user' %}
+                <strong>🧑 你：</strong> {{ message.text }}
+                {% else %}
+                <strong>🤖 機器人：</strong> {{ message.text | safe }}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <form method="post">
+            <input type="text" name="query" placeholder="請輸入地點或問題，例如：宿舍在哪？" required />
+            <input type="submit" value="查詢" />
+        </form>
+    </div>
+
+    <script>
+        // 自動捲動到底部
+        window.onload = function () {
+            const chatHistory = document.querySelector('.chat-history');
+            if (chatHistory) {
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        };
+
+        // 按 Enter 送出表單
+        document.querySelector('input[name="query"]').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.form.submit();
+            }
+        });
+    </script>
+</body>
+
+</html>
