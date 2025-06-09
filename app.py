@@ -314,79 +314,105 @@ def handle_location_message(event):
             )
         )
 
-# --- [修改點 9] Flex Message 構建函數 (保留舊版 linebot.models 定義，但返回 V3FlexMessage) ---
 def create_lost_items_flex_message(items):
     if not items:
-        return V3TextMessage(text="目前沒有失物招領資訊。") # 返回 V3 TextMessage
+        return V3TextMessage(text="目前沒有失物招領資訊。")
 
-    bubbles = []
+    bubbles_json = [] # 用於存放字典形式的 Flex Message 氣泡
     for item in items:
         # 確保圖片 URL 是 HTTPS
         image_url = item.get('image_url', 'https://via.placeholder.com/450x300?text=No+Image')
-        # 如果圖片 URL 是本地路徑，需要在這裡轉換為可公開訪問的 URL
-        # 在 Hugging Face Space 環境中，request.host 會是您的 Space URL
         if image_url.startswith('/static/uploads/'):
             base_url = f"https://{request.host}"
             image_url = f"{base_url}{image_url}"
-            print(f"Adjusted Flex Image URL: {image_url}") # 打印調整後的 URL
+            print(f"Adjusted Flex Image URL: {image_url}")
 
         description_text = f"描述: {item.get('description', '無')}"
         location_text = f"位置: {item.get('location', '無')}"
-        report_date_str = item.get('report_date', '無').split('T')[0] # 僅取日期部分
+        report_date_str = item.get('report_date', '無').split('T')[0]
 
-        bubble = BubbleContainer(
-            direction='ltr',
-            hero=ImageComponent(
-                url=image_url,
-                size='full',
-                aspect_ratio='20:13',
-                aspect_mode='cover',
-                action=URIAction(uri=image_url, label='查看大圖') # 查看大圖的 URIAction
-            ),
-            body=BoxComponent(
-                layout='vertical',
-                contents=[
-                    TextComponent(text=description_text, wrap=True, size='md'),
-                    TextComponent(text=location_text, wrap=True, size='sm', color='#666666'),
-                    TextComponent(text=f"日期: {report_date_str}", wrap=True, size='sm', color='#666666'),
+        # *** 將 BubbleContainer 替換為直接的字典結構 ***
+        bubble = {
+            "type": "bubble",
+            "direction": "ltr",
+            "hero": {
+                "type": "image",
+                "url": image_url,
+                "size": "full",
+                "aspectRatio": "20:13",
+                "aspectMode": "cover",
+                "action": {
+                    "type": "uri",
+                    "label": "查看大圖",
+                    "uri": image_url
+                }
+            },
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": description_text,
+                        "wrap": True,
+                        "size": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": location_text,
+                        "wrap": True,
+                        "size": "sm",
+                        "color": "#666666"
+                    },
+                    {
+                        "type": "text",
+                        "text": f"日期: {report_date_str}",
+                        "wrap": True,
+                        "size": "sm",
+                        "color": "#666666"
+                    }
                 ]
-            ),
-            footer=BoxComponent(
-                layout='vertical',
-                spacing='sm',
-                contents=[
-                    ButtonComponent(
-                        style='link',
-                        height='sm',
-                        action=URIAction(label='了解 LINE 應用', uri='https://line.me/zh-hant/')
-                    ),
-                    ButtonComponent(
-                        style='link',
-                        height='sm',
-                        action=URIAction(label='地圖查看位置', uri=f'http://maps.google.com/?q={quote(item.get("location", ""))}') # 修改為更通用的 Google Maps 查詢
-                    )
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "了解 LINE 應用",
+                            "uri": "https://line.me/zh-hant/"
+                        }
+                    },
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "地圖查看位置",
+                            "uri": f'http://maps.google.com/maps?q={quote(item.get("location", ""))}' # 簡化 Google Maps 查詢
+                        }
+                    }
                 ]
-            )
-        )
-        bubbles.append(bubble)
-        if len(bubbles) >= 10: # Flex Message Carousel 限制最多 10 個 Bubble
+            }
+        }
+        bubbles_json.append(bubble)
+        if len(bubbles_json) >= 10:
             break
 
-    if bubbles:
-        # 將每個 bubble 轉換為字典
-        bubble_dicts = [bubble.as_dict() for bubble in bubbles]
-        # 將 CarouselContainer 轉換為字典
-        carousel_container_dict = CarouselContainer(contents=bubble_dicts).as_dict()
-
-        # 返回 V3 FlexMessage 物件，其 contents 應為字典
-        return V3FlexMessage(alt_text="失物招領資訊", contents=carousel_container_dict)
+    if bubbles_json:
+        # V3FlexMessage 的 contents 直接接收字典
+        return V3FlexMessage(alt_text="失物招領資訊", contents={
+            "type": "carousel",
+            "contents": bubbles_json
+        })
     else:
         return V3TextMessage(text="目前沒有失物招領資訊。")
-
-# --- [修改點 10] 移除 Flask 應用程式啟動代碼 ---
-# 由於您使用 Docker 和 Gunicorn，這些代碼不再需要
-# if __name__ == "__main__":
-#    app.run(host='0.0.0.0', port=5000, debug=True)
 
 @app.route("/")
 def health_check():
