@@ -237,7 +237,7 @@ def handle_image_message(event):
         try:
             # *** 修改這行！從 line_bot_api 改為 line_blob_api ***
             message_content = line_blob_api.get_message_content(event.message.id)
-            image_data = message_content.content
+            image_data = message_content
             original_filename = event.message.id + '.jpg'
             unique_filename = f"{uuid.uuid4()}_{original_filename}"
             local_file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
