@@ -29,9 +29,9 @@ EXPOSE 7860
 # 使用 `||` (OR) 操作符：如果 Gunicorn 成功啟動，則後面的循環不會執行。
 # 如果 Gunicorn 啟動失敗，則 `||` 後面的命令會執行，進入一個無限循環並持續輸出日誌。
 CMD sh -c "echo 'Attempting Gunicorn startup...' && \
-           stdbuf -oL gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app || \
-           (echo 'Gunicorn failed to start. Entering infinite loop for debugging.' && \
-            while true; do \
-                echo 'Container is alive but Gunicorn failed. Check previous logs for errors or configuration.' && \
-                sleep 10; \
-            done)"
+           stdbuf -oL gunicorn --worker-class gthread --workers 1 --timeout 120 --bind \"0.0.0.0:${PORT:-7860}\" app:app || \
+           ( echo 'Gunicorn failed to start. Entering infinite loop for debugging.' && \
+             while true; do \
+                 echo 'Container is alive but Gunicorn failed. Check previous logs for errors or configuration.' && \
+                 sleep 10; \
+             done )" # <--- 這裡，在括號 `(` 和 `)` 前後添加了空格。
