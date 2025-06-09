@@ -1,11 +1,7 @@
-# 使用一個更通用的 Python 3.10 基礎映像
-# alpine 版本通常較小，但有時會導致一些編譯問題，我們暫時保持這個
 FROM python:3.10-slim-buster
 
-# 設定工作目錄
 WORKDIR /app
 
-# 將 requirements.txt 複製到工作目錄
 COPY requirements.txt .
 
 # 安裝所有依賴
