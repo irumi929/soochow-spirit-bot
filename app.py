@@ -6,36 +6,39 @@ import socket
 from flask import Flask, request, abort, send_from_directory
 import json # 新增導入
 
-
-# --- 從 linebot.v3.messaging 導入核心 API 和頂層訊息類別 ---
+# 從 linebot.v3.messaging 導入核心 API 和頂層訊息類別
 from linebot.v3.messaging import (
     Configuration,
     ApiClient,
     MessagingApi,
-    ReplyMessageRequest, # 用於構建回覆請求
-    TextMessage as V3TextMessage, # 將 v3 TextMessage 重命名以避免與 linebot.models 衝突
-    ImageMessage as V3ImageMessage, # 將 v3 ImageMessage 重命名
-    LocationMessage as V3LocationMessage, # 將 v3 LocationMessage 重命名
-    FlexMessage as V3FlexMessage, # 將 v3 FlexMessage 重命名
+    ReplyMessageRequest,
+    TextMessage as V3TextMessage,
+    ImageMessage as V3ImageMessage,
+    LocationMessage as V3LocationMessage,
+    FlexMessage as V3FlexMessage,
     MessagingApiBlob,
 )
 
-# 從 linebot.v3.messaging.models 導入 Flex Message 的具體組件類別
-from linebot.v3.messaging.models import (
+# 從 linebot.v3.messaging.models.flex 導入 Flex Message 的具體組件類別
+# 注意這裡的導入路徑變成了 linebot.v3.messaging.models.flex
+from linebot.v3.messaging.models.flex import (
     BoxComponent,
     TextComponent,
     ImageComponent,
     ButtonComponent,
     URIAction,
-    CarouselContainer, # <--- 修正後的導入路徑
-    BubbleContainer,
+    CarouselContainer, # CarouselContainer 和 BubbleContainer 也可能在這裡
+    BubbleContainer,   # 如果在這裡導入仍失敗，再將它們移回 linebot.v3.messaging.models
 )
 
-from linebot.v3.webhook import WebhookHandler # WebhookHandler 類別名不變，但導入路徑變了
-from linebot.v3.webhooks import ( # 新增 webhooks 模組，用於事件物件
+
+from linebot.v3.webhook import WebhookHandler
+from linebot.v3.webhooks import (
     MessageEvent, TextMessageContent, ImageMessageContent, LocationMessageContent
 )
 from linebot.v3.exceptions import InvalidSignatureError
+
+
 
 # ... 程式碼的其餘部分保持不變 ...
 
