@@ -298,10 +298,9 @@ def create_lost_items_flex_message(items):
 
     bubbles = []
     for item in items:
-        location = item.get("location", "")
-        
+        location = str(item.get("location", "") or "")
         is_latlng = re.match(r'^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$', location.strip())
-        
+
         map_url = f"https://www.google.com/maps/search/?api=1&query={quote(location)}" if is_latlng else None
 
         bubble = BubbleContainer(
